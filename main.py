@@ -21,10 +21,10 @@ position = False
 up = False
 macd_change = False
 
-ema_old = 58900
-lowest = 58700
-highest = 58850
-sar = 58600
+ema_old = 60400
+lowest = 60950
+highest = 61100
+sar = 60900
 sar_bool = True
 
 f = open("COIN_SAVE.txt", "r")     #Restore last Coin
@@ -191,7 +191,7 @@ def on_message(ws, msg):
     price_highest = float(msg_json['k']['h'])
     price_lowest = float(msg_json['k']['l'])
 
-    if is_candle_closed:
+    if is_candle_closed or True:
         json_message.append(float(price))
         print(price)
 
@@ -248,23 +248,27 @@ def on_message(ws, msg):
         if len(json_message) == 50:
             print("ready")
             if ema < price:
+                print("1")
                 if macd > 0 and macd_change == False and position == False:
                     macd_change = True
                 elif macd < 0 and macd_change == False and position == True:
                     macd_change = True
-
+                print("2")
                 if change == 0: #Damit er beim zu beginn erst beim aufstieg wieder kauft
+                    print("3")
                     if macd > 0:
                             position = True
                     if macd < 0:
+                        print("4")
                         if position:
                             position = False
                             change = 1
                 else:
+                    print("5")
                     if macd > 0 and macd_change == True:
                         if position:
                             print("Er scoutet!")
-                        else:
+                        elif position == False:
                             if sar_bool:
                                 print("buy")
                                 send_message("buy")
@@ -274,12 +278,13 @@ def on_message(ws, msg):
                                 buy_price = 2 * price - lowest
                                 sell_price = sar
                                 position = True
-                    macd_change = False
-            if buy_price < price or sell_price > price and position:
-                print("sell")
-                send_message("sell")
-                sell(symbol, quantity)
-                position = False
+                macd_change = False
+            if buy_price < price or sell_price > price:
+                if position:
+                    print("sell")
+                    send_message("sell")
+                    sell(symbol, quantity)
+                    position = False
 
 ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message, on_error=on_error)
 ws.run_forever()
