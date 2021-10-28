@@ -22,9 +22,9 @@ up = False
 macd_change = False
 
 ema_old = 60400
-lowest = 60950
-highest = 61100
-sar = 60900
+lowest = 61366
+highest = 61550
+sar = 61370
 sar_bool = True
 
 f = open("COIN_SAVE.txt", "r")     #Restore last Coin
