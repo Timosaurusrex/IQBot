@@ -12,7 +12,7 @@ i = 0
 ema_old_fast = 0
 ema_old_slow = 0
 ema_old_macd = 0
-quantity = 100
+quantity = 0.015
 change = 0
 counter = 1
 last_message = ""
@@ -180,7 +180,7 @@ def telegram():
 
 def on_message(ws, msg):
     global symbol, ema, ema_old, ema_old_fast, ema_old_slow, macd_line, ema_old_macd
-    global position, change, sar, lowest, highest, counter
+    global position, change, sar, lowest, highest, counter, quantity
     global macd_change, i, sar_bool, buy_price, sell_price
     telegram()
 
@@ -191,7 +191,7 @@ def on_message(ws, msg):
     price_highest = float(msg_json['k']['h'])
     price_lowest = float(msg_json['k']['l'])
 
-    if is_candle_closed or True:
+    if is_candle_closed:
         json_message.append(float(price))
         print(price)
 
@@ -245,26 +245,22 @@ def on_message(ws, msg):
         macd = macd_line - ema_macd
         print(f"MACD: {macd}")
 
-        if len(json_message) == 50:
-            print("ready")
+        if len(json_message) >= 201:
             if ema < price:
-                print("1")
+
                 if macd > 0 and macd_change == False and position == False:
                     macd_change = True
                 elif macd < 0 and macd_change == False and position == True:
                     macd_change = True
-                print("2")
+
                 if change == 0: #Damit er beim zu beginn erst beim aufstieg wieder kauft
-                    print("3")
                     if macd > 0:
                             position = True
                     if macd < 0:
-                        print("4")
                         if position:
                             position = False
                             change = 1
                 else:
-                    print("5")
                     if macd > 0 and macd_change == True:
                         if position:
                             print("Er scoutet!")
@@ -272,7 +268,11 @@ def on_message(ws, msg):
                             if sar_bool:
                                 print("buy")
                                 send_message("buy")
-                                buy(symbol, quantity)
+                                quantity = Quantity(mtg=1, symbol=symbol)
+                                buy(symbol, float(quantity))
+                                f = open("OrderHistory.txt", "a")
+                                f.write("BUY - " + str(price) + "\n")
+                                f.close()
                                 # limit_sell_order(sar)
                                 # sell_order(price-sar+price)
                                 buy_price = 2 * price - lowest
@@ -283,7 +283,10 @@ def on_message(ws, msg):
                 if position:
                     print("sell")
                     send_message("sell")
-                    sell(symbol, quantity)
+                    sell(symbol, float(quantity))
+                    f = open("OrderHistory.txt", "a")
+                    f.write("SELL - " + str(price) + "\n")
+                    f.close()
                     position = False
 
 ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message, on_error=on_error)
