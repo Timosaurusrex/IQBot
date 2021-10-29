@@ -18,6 +18,7 @@ counter = 1
 last_message = ""
 last_date = check_for_message_date()
 position = False
+sold = True
 up = False
 macd_change = False
 
@@ -47,16 +48,6 @@ def on_close(ws ,a ,b):
 
 def on_error(ws, error):
     print(error)
-
-def save_trades():
-    global trades
-    f = open("trades.txt", "w")
-    f.write("")
-    f.close()
-    f = open("trades.txt", "a")
-    for a in trades:
-        f.write(str(a) + "\n")
-    f.close()
 
 def telegram():
     global last_message, last_date, SOCKET, symbol, startcapital, trades, threshold, mtg, quantity, tradenum
@@ -181,7 +172,7 @@ def telegram():
 def on_message(ws, msg):
     global symbol, ema, ema_old, ema_old_fast, ema_old_slow, macd_line, ema_old_macd
     global position, change, sar, lowest, highest, counter, quantity
-    global macd_change, i, y, sar_bool, buy_price, sell_price
+    global macd_change, i, y, sar_bool, buy_price, sell_price, sold
     telegram()
 
     #print(msg)
@@ -248,11 +239,12 @@ def on_message(ws, msg):
         if len(json_message) >= 201:
             if ema < price:
 
-                if macd > 0 and macd_change == False and position == False and ema < price_highest and y <= 4:
+                if macd > 0 and macd_change == False and position == False and ema < price_highest and y <= 4 and sold == False:
                     macd_change = True
                     y += 1
                 elif macd < 0 and macd_change == False and position == True:
                     macd_change = True
+                    sold = False
                     y = 0
 
                 if change == 0: #Damit er beim zu beginn erst beim aufstieg wieder kauft
@@ -276,7 +268,8 @@ def on_message(ws, msg):
                                 f.write("BUY - " + str(price) + "\n")
                                 f.close()
                                 # limit_sell_order(sar)
-                                # sell_order(price-sar+price)
+                                #client.create_order(symbol=symbol.upper(), side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=quantity)
+                                #set_limit_order(price) sell_order(price-sar+price)
                                 buy_price = 2 * price - lowest
                                 sell_price = sar
                                 position = True
@@ -290,88 +283,7 @@ def on_message(ws, msg):
             f.write("SELL - " + str(price) + "\n")
             f.close()
             position = False
+            sold = True
 
 ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message, on_error=on_error)
 ws.run_forever()
-
-
-
-
-"""
-mtg = 10
-tradenum = 0
-trades = [0,0,0,0,0,0,0,0,0,0,0,0]
-threshold = 1.5
-rsi = 0
-nextrsi = False
-
-f = open("trades.txt", "r")     #Restore last Trades
-for x in f:
-    trades[i] = float(x)
-    i = i + 1
-    if float(x) > 0:
-        tradenum = tradenum + 1
-f.close()
-"""
-"""
-            nextrsi = True
-            win = 0
-            lose = 0
-            json_message.pop(0)
-            for i in range(12):
-                if json_message[i] < json_message[i + 1]:
-                    win = win + (json_message[i + 1] - json_message[i])
-                else:
-                    lose = lose + (json_message[i] - json_message[i + 1])
-                if win != 0 and lose != 0:
-                    rsi = 100 - 100 / (1 + (win / lose))
-                else:
-                    rsi = 50
-
-    if tradenum == 0:
-        print("Rsi", rsi)
-
-    #print(json_message)
-    if trades[0] == 0 and rsi < 50 and nextrsi:
-        #client.create_order(symbol=symbol.upper()
-        , side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=quantity)
-        #set_limit_order(price)
-        buy(symbol, quantity)
-        nextrsi = False
-        trades[0] = price
-        tradenum = 1
-        print("Buy", tradenum)
-        save_trades()
-        f = open("OrderHistory.txt", "a")
-        f.write("BUY - " + str(price) + " - " + str(tradenum) + "\n")
-        f.close()
-        f = open("OrderHistory.txt", "a")
-        f.write(str(trades) + "\n")
-        f.close()
-    else:
-        if trades[tradenum - 1] > price + (trades[tradenum - 1] / 100) * threshold and tradenum < mtg:
-            trades[tradenum] = price
-            tradenum = tradenum + 1
-            print("Buy", tradenum)
-            buy(symbol, quantity)
-            save_trades()
-            f = open("OrderHistory.txt", "a")
-            f.write("BUY - " + str(price) + " - " + str(tradenum) + "\n")
-            f.close()
-            f = open("OrderHistory.txt", "a")
-            f.write(str(trades) + "\n")
-            f.close()
-        elif trades[tradenum - 1] < price - (trades[tradenum - 1] / 100) * threshold and tradenum >= 1:
-            trades[tradenum - 1] = 0
-            print("Sell", tradenum)
-            sell(symbol, quantity)
-            save_trades()
-            f = open("OrderHistory.txt", "a")
-            f.write("SELL - " + str(price) + " - " + str(tradenum) + "\n")
-            f.close()
-            f = open("OrderHistory.txt", "a")
-            f.write(str(trades) + "\n")
-            f.close()
-            tradenum = tradenum - 1
-            #quantity = Quantity(mtg=mtg, symbol=symbol)
-"""
