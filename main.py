@@ -9,10 +9,10 @@ import time
 
 json_message=[]
 i = 0
+y = 0
 ema_old_fast = 0
 ema_old_slow = 0
 ema_old_macd = 0
-quantity = 0.015
 change = 0
 counter = 1
 last_message = ""
@@ -181,7 +181,7 @@ def telegram():
 def on_message(ws, msg):
     global symbol, ema, ema_old, ema_old_fast, ema_old_slow, macd_line, ema_old_macd
     global position, change, sar, lowest, highest, counter, quantity
-    global macd_change, i, sar_bool, buy_price, sell_price
+    global macd_change, i, y, sar_bool, buy_price, sell_price
     telegram()
 
     #print(msg)
@@ -248,10 +248,12 @@ def on_message(ws, msg):
         if len(json_message) >= 201:
             if ema < price:
 
-                if macd > 0 and macd_change == False and position == False:
+                if macd > 0 and macd_change == False and position == False and ema < price_highest and y <= 4:
                     macd_change = True
+                    y += 1
                 elif macd < 0 and macd_change == False and position == True:
                     macd_change = True
+                    y = 0
 
                 if change == 0: #Damit er beim zu beginn erst beim aufstieg wieder kauft
                     if macd > 0:
@@ -279,15 +281,15 @@ def on_message(ws, msg):
                                 sell_price = sar
                                 position = True
                 macd_change = False
-            if buy_price < price or sell_price > price:
-                if position:
-                    print("sell")
-                    send_message("sell")
-                    sell(symbol, float(quantity))
-                    f = open("OrderHistory.txt", "a")
-                    f.write("SELL - " + str(price) + "\n")
-                    f.close()
-                    position = False
+    if buy_price < price or sell_price > price:
+        if position:
+            print("sell")
+            send_message("sell")
+            sell(symbol, float(quantity))
+            f = open("OrderHistory.txt", "a")
+            f.write("SELL - " + str(price) + "\n")
+            f.close()
+            position = False
 
 ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message, on_error=on_error)
 ws.run_forever()
@@ -331,7 +333,8 @@ f.close()
 
     #print(json_message)
     if trades[0] == 0 and rsi < 50 and nextrsi:
-        #client.create_order(symbol=symbol.upper(), side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=quantity)
+        #client.create_order(symbol=symbol.upper()
+        , side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=quantity)
         #set_limit_order(price)
         buy(symbol, quantity)
         nextrsi = False
