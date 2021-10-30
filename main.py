@@ -23,9 +23,9 @@ up = False
 macd_change = False
 
 ema_old = 60400
-lowest = 61366
-highest = 61550
-sar = 61370
+lowest = 0
+highest = 0
+sar = 0
 sar_bool = True
 
 f = open("COIN_SAVE.txt", "r")     #Restore last Coin
@@ -73,32 +73,15 @@ def telegram():
             f = open("COIN_SAVE.txt", "w")
             f.write(message)
             f.close()
-            quantity = Quantity(symbol, mtg)
-            trades = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            tradenum = 0
+            quantity = Quantity(symbol=symbol, mtg=1)
             symbol = message
             SOCKET = "wss://stream.binance.com:9443/ws/" + symbol + "@kline_1m"
             last_message = ""
             send_message("Coin changed!")
-        elif message == "change percent" or message == "/change_percent":
-            send_message(f"Percent: {threshold}\nWie viel % wollen sie?    /end")
-            last_message = message
-            print("change percent")
-        elif last_message == "/change_percentage" or last_message == "change percent" and message != "/end":
-            threshold = float(message)
-            last_message = ""
-            send_message("Percent changed!")
         elif message == "restart history" or message == "/restart_history":
             print("restart history")
             with open("OrderHistory.txt", 'r+') as f:
                 f.truncate(0)
-            last_message = ""
-            send_message("!Finished!")
-        elif message == "restart trades" or message == "/restart_trades":
-            print("restart trades")
-            with open("trades.txt", 'r+') as f:
-                f.truncate(0)
-                f.write("0")
             last_message = ""
             send_message("!Finished!")
         elif message == "sell everything" or message == "/sell_everything":
@@ -131,17 +114,12 @@ def telegram():
             last_message = ""
             quantity = Quantity(symbol, mtg)
             send_message("MTG changed!")
-        elif message == "restart everything" or message == "/restart everything":
+        elif message == "restart everything" or message == "/restart_everything":
             send_message(f"How much money do you want?    /end")
             last_message = message
             print("restart money")
         elif last_message == "restart everything" or last_message == "/restart_everything" and message != "/end":
-            trades = [0,0,0,0,0,0,0,0,0,0]
-            tradenum = 0
             f = open(f"{symbol.upper()}.txt", "w")
-            f.write("0")
-            f.close()
-            f = open("trades.txt", "w")
             f.write("0")
             f.close()
             f = open("USDT.txt", "w")
@@ -239,17 +217,17 @@ def on_message(ws, msg):
         if len(json_message) >= 201:
             if ema < price:
 
-                if macd > 0 and macd_change == False and position == False and ema < price_highest and y <= 4 and sold == False:
+                if macd > 0 and macd_change == False and ema < price_highest and y <= 4 and sold == False:
                     macd_change = True
                     y += 1
-                elif macd < 0 and macd_change == False and position == True:
+                elif macd < 0 and macd_change == False:
                     macd_change = True
                     sold = False
                     y = 0
 
-                if change == 0: #Damit er beim zu beginn erst beim aufstieg wieder kauft
+                if change == 0: #Damit er zu beginn erst beim aufstieg wieder kauft
                     if macd > 0:
-                            position = True
+                        position = True
                     if macd < 0:
                         if position:
                             position = False
@@ -258,6 +236,7 @@ def on_message(ws, msg):
                     if macd > 0 and macd_change == True:
                         if position:
                             print("Er scoutet!")
+
                         elif position == False:
                             if sar_bool:
                                 print("buy")
@@ -274,6 +253,7 @@ def on_message(ws, msg):
                                 sell_price = sar
                                 position = True
                 macd_change = False
+
     if buy_price < price or sell_price > price:
         if position:
             print("sell")
