@@ -22,10 +22,10 @@ sold = True
 up = False
 macd_change = False
 
-ema_old = 60400
-lowest = 0
-highest = 0
-sar = 0
+ema_old = 61250
+lowest = 60680
+highest = 61000
+sar = 60013
 sar_bool = True
 
 f = open("COIN_SAVE.txt", "r")     #Restore last Coin
@@ -33,7 +33,7 @@ symbol = f.read()
 f.close()
 print("Current coin:", symbol)
 
-SOCKET = "wss://stream.binance.com:9443/ws/" + symbol.lower() + "@kline_1m"
+SOCKET = "wss://stream.binance.com:9443/ws/" + symbol.lower() + "@kline_30m"
 client = Client(config.API_KEY, config.API_SECRET)
 
 def on_open(ws):
@@ -47,7 +47,8 @@ def on_close(ws ,a ,b):
     ws.run_forever()
 
 def on_error(ws, error):
-    print(error)
+    #print(error)
+    z = 0
 
 def telegram():
     global last_message, last_date, SOCKET, symbol, startcapital, trades, threshold, mtg, quantity, tradenum
@@ -214,7 +215,7 @@ def on_message(ws, msg):
         macd = macd_line - ema_macd
         print(f"MACD: {macd}")
 
-        if len(json_message) >= 201:
+        if len(json_message) >= 51:
             if ema < price:
 
                 if macd > 0 and macd_change == False and ema < price_highest and y <= 4 and sold == False:
