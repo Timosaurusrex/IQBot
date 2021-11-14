@@ -5,11 +5,11 @@ import json
 import requests
 import config
 from Telegram import send_message, check_for_message, check_for_message_date
-import time
 
 json_message=[]
 i = 0
 y = 0
+s = 0
 ema_old_fast = 0
 ema_old_slow = 0
 ema_old_macd = 0
@@ -42,13 +42,11 @@ def on_open(ws):
 def on_close(ws ,a ,b):
     print('closed connection')
     send_message("Er is abgestürzt!!!")
-    time.sleep(60)
     ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message)
     ws.run_forever()
 
 def on_error(ws, error):
-    #print(error)
-    z = 0
+    print(error)
 
 def telegram():
     global last_message, last_date, SOCKET, symbol, startcapital, trades, threshold, mtg, quantity, tradenum
@@ -151,7 +149,7 @@ def telegram():
 def on_message(ws, msg):
     global symbol, ema, ema_old, ema_old_fast, ema_old_slow, macd_line, ema_old_macd
     global position, change, sar, lowest, highest, counter, quantity
-    global macd_change, i, y, sar_bool, buy_price, sell_price, sold
+    global macd_change, i, y, sar_bool, buy_price, sell_price, sold, s
     telegram()
 
     #print(msg)
@@ -162,6 +160,9 @@ def on_message(ws, msg):
     price_lowest = float(msg_json['k']['l'])
 
     if is_candle_closed:
+        if s < 3:
+            send_message("Candle closed 30")
+            s += 1
         json_message.append(float(price))
         print(price)
 
